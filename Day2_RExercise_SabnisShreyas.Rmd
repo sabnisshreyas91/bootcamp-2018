@@ -1,0 +1,206 @@
+---
+title: "R Day 2"
+author: "Shreyas Sabnis"
+date: "9/18/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+here::here("data", "gapminder5.csv")
+
+gapminder <- read.csv(here::here("data","gapminder5.csv"))
+
+str(gapminder)
+
+```
+
+## Converting factors to characters
+
+```{r}
+gapminder$country=as.character(gapminder$country)
+gapminder$continent=as.character(gapminder$continent)
+str(gapminder)
+```
+
+```{r}
+# create a vector of values that you want to repeat the function for 
+#obs <- 1:nrow(gapminder)
+#initialize the for loop with 'for (i in vector)'
+#for (i in obs) {
+#  gapminder[i,'gdp'] <- gapminder[i, 'pop'] * gapminder[i, 'gdpPercap]
+#}
+```
+
+##New variable that get the natural log of the GDP per cap and population
+```{r}
+#obs <- 1:nrow(gapminder)
+#for (i in obs) {
+#  gapminder[i,'log_gdpPercap'] = log(gapminder[i, 'gdpPercap'])
+#  gapminder[i,'log_pop'] = log(gapminder[i, 'pop'])
+#}
+```
+
+
+##vectorized function
+```{r}
+gapminder$vec_log_gdpPercap = log(gapminder$gdpPercap)
+all(gapminder$vec_log_gdpPercap == gapminder$log_gdpPercap)
+```
+
+##has life expectancy increased over time?
+```{r}
+#years <- unique(gapminder$year)
+
+#for (i in year) {
+#  mean_ye <- mean(gapminder$lifeExp[gapminder$year == i], na.rm= T)
+#  print(paste0(i, ":", mean_le))
+#}
+```
+
+#Life expectancy by continent
+```{r}
+continent <- unique(gapminder$continent)
+
+for (i in continent){
+  mean_con <- mean(gapminder$lifeExp[gapminder$continent == i], na.rm= T)
+  print(paste0(i, ":", mean_con))
+}
+```
+
+## LE by continent and year
+```{r}
+conts <- unique(gapminder$continent)
+years <- unique(gapminder$year)
+
+for (i in conts){
+  for (j in years) {
+    print(paste0(i," ", j," : ", mean(gapminder$lifeExp[ gapminder$continent == i & gapminder$year ==j])))
+  }
+}
+```
+
+##LE by continent and country
+```{r}
+conts <- unique(gapminder$continent)
+years <- unique(gapminder$year)
+
+for (i in conts) {
+  for (j in years) {
+    print(paste0(i, " ", j, " ", sd(gapminder$lifeExp[ gapminder$continent == i & gapminder$year == j])))
+  }
+}
+```
+
+##Apply function
+```{r}
+apply(gapminder[, c('lifeExp','pop','gdpPercap')], 2 , mean, na.rm = TRUE)
+```
+#lapply
+```{r}
+lapply(gapminder, mean)
+```
+
+#Anonymous functions in apply
+```{r}
+sapply(unique(gapminder$year), function(x) mean(gapminder$lifeExp[gapminder$year== x]))
+```
+
+#While loop
+#LE for years before 1987
+```{r}
+i= min(gapminder$year)
+while (i < 1987){
+  print(paste0 (i , " : ", sd(gapminder$lifeExp[gapminder$year == i])))
+  i = i+ 5
+}
+```
+
+## SD of LE b/w 1987 and 2002
+```{r}
+i <- 1987
+while(i <= 2002) {
+  print(paste(i, sd(gapminder$lifeExp[gapminder$year == i])))
+  i = i + 5
+}
+```
+
+#if else in a for loop
+```{r}
+thresh = 70
+for (i in unique(gapminder$continent)) {
+  measure = mean(gapminder$lifeExp[gapminder$continent== i])
+  if (measure <70) {
+    print(paste(i, "has a life exp of", measure, "which is less than 70"))
+  } else {
+    print(paste(i, "has a life exp of", measure, "which is not less than 70"))
+  }
+}
+```
+
+#mean population for years greater than or equal to 1987
+```{r}
+thresh = 1987
+
+for (i in unique(gapminder$year)){
+  if (i <1987){
+    print(paste(i,' is less than 1987'))
+  } else {
+print( paste('the mean population for ', i, 'is', mean(gapminder$pop[gapminder$year == i])))
+  }
+}
+```
+
+#Functions
+```{r}
+get_vals <- 
+  function(df, variable = 'continent') {
+  print(paste(variable, ":", unique(df[[variable]])))
+  }
+
+get_vals(gapminder,'continent')
+```
+
+
+##mean and standard deviation for life expentancy for a given country in the gapminder dataset
+
+
+##Write a function that reports the mean, median, minimum, and maximum for life expectancy for a continent in gapminder
+```{r}
+get_summary_stats <-
+  function(df,variable,continent) {
+    mean_val = mean(df[[variable]][df$continent == continent])
+    med_val = median(df[[variable]][df$continent == continent])
+    min_val = min(df[[variable]][df$continent == continent])
+    max_val = max(df[[variable]][df$continent == continent])
+    print(paste(" summary statistics for ",continent,": (",mean_val,med_val,min_val,max_val,")"))
+  }
+get_summary_stats(gapminder, 'pop', 'Asia')
+```
+
+```{r}
+get_summary_stats(gapminder, 'lifeExp', 'Asia')
+
+```
+
+##Loglog model, life exp vs GDP
+```{r}
+viz <-
+  function(df,dx,dy,year) {
+    dat = df[df$year== year,]
+    y = log(dat[[dy]])
+    x= log(dat[[dx]])
+    fit <- lm(y~x)
+    plot(y~x, main = year, xlab= dx, ylab= y)
+    lines(x, predict(fit), col='blue')
+  }
+```
+
+```{r}
+viz(gapminder, 'pop', 'gdpPercap', 1977)
+```
+
+
